@@ -804,17 +804,29 @@ StorageLocationSpecifier
   / MemoryToken
   / CalldataToken
 
+StorageSlotSpecifier
+  = __ StorageToken __ "[" __ slot:Literal __ "]" __
+  {
+    return { slot: slot.value }
+  }
+
 StateVariableSpecifiers
-  = specifiers:(VisibilitySpecifier __ ConstantToken?){
+  = __ specifiers:VisibilitySpecifier __
+  {
     return {
-      visibility: specifiers[0][0],
-      isconstant: specifiers[2] ? true: false 
+      visibility : specifiers[0]
     }
   }
-  / specifiers:(ConstantToken __ VisibilitySpecifier?){
+  / __ specifiers:ConstantToken __
+  {
     return {
-      visibility: specifiers[2] ? specifiers[2][0] : null,
-      isconstant: true
+      is_constant : true
+    }
+  }
+  / __ specifiers:StorageSlotSpecifier __
+  {
+    return {
+      slot : specifiers.slot
     }
   }
 
@@ -824,18 +836,21 @@ StateVariableValue
   }
 
 StateVariableDeclaration
-  = type:Type __ specifiers:StateVariableSpecifiers? __ id:Identifier __ value:StateVariableValue? __ EOS  
+  = type:Type __ specifiers:StateVariableSpecifiers* __ id:Identifier __ value:StateVariableValue? __ EOS  
   {
-    return {
+    var v = {
       type: "StateVariableDeclaration",
       name: id.name,
       literal: type,
-      visibility: specifiers? specifiers.visibility : null,
-      is_constant: specifiers? specifiers.isconstant : false,
+      is_constant: false,
       value: value,
       start: location().start.offset,
       end: location().end.offset
     }
+    for (var i = 0; i < specifiers.length; i++) {
+      v = { ...v, ...specifiers[i]};
+    }
+    return v;
   }
 
 DeclarativeExpression

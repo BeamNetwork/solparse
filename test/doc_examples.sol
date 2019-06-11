@@ -596,4 +596,9 @@ contract UsesNewConstructor {
       address         payable x;
     }
 }
+
+contract UsesStorageSlot {
+    uint256 public storage[0x123] a;
+    uint256 public storage["b"] b;
+}
 //end of file
